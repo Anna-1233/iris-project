@@ -46,3 +46,8 @@ def iris_predict(sepal_lenght: float, sepal_width: float,
     # Zwracamy klase i wektor prawdopodobienstw
     return y_class, y_prob
 
+
+if __name__ == "__main__":
+    spec, pr = iris_predict(6.4, 2.8, 5.6, 2.2)
+    print(spec)
+    print(pr)
