@@ -43,7 +43,7 @@ def anomaly_detect(sepal_lenght: float, sepal_width: float,
         "SET_MEAN3": 1.464,
         "SET_MEAN4": 0.244,
         "VIR_MEAN1": 6.588,
-        "VIR_MEAN2": 6.588,
+        "VIR_MEAN2": 2.974,
         "VIR_MEAN3": 5.552,
         "VIR_MEAN4": 2.026,
         "VER_MEAN1": 5.936,
@@ -108,6 +108,7 @@ def iris_predict(sepal_lenght: float, sepal_width: float,
     
     # Wczytujemy model
     model = joblib.load("iris_softmax.joblib")
+    scaler = joblib.load("scaler.joblib")
 
     # Sprawdzamy, czy typy sie zgadzaja
     if (not isinstance(sepal_lenght, (float)) 
@@ -118,6 +119,7 @@ def iris_predict(sepal_lenght: float, sepal_width: float,
 
     # Tworzymy wektor cech
     X_feat = np.array([[sepal_lenght, sepal_width, petal_length, petal_width]])
+    X_feat = scaler.transform(X_feat)
 
     # Predykcja
     y_class = model.predict(X_feat)
