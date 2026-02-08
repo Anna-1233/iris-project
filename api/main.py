@@ -45,6 +45,7 @@ class IrisItem(BaseModel):
 
 # model and evaluation metrics
 MODEL_PATH = "model/iris_softmax.joblib"
+SCALER_PATH = "model/scaler.joblib"
 REPORT_PATH = "model/classification_report.json"
 MATRIX_PATH = "model/confusion_matrix.png"
 FEATURES_PATH = "model/features.png"
@@ -55,6 +56,7 @@ CONFIDENCE_THRESHOLD = 0.70
 # load the pre-trained model and define class names
 try:
     model = joblib.load(MODEL_PATH)
+    scaler = joblib.load(SCALER_PATH)
     iris_names = ['setosa', 'versicolor', 'virginica']
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -81,7 +83,9 @@ async def predict(data: IrisItem):
         raise HTTPException(status_code=503, detail="Model not available.")
 
     # convert input data to a 2D NumPy array for prediction
-    features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
+    raw_features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
+    features = scaler.transform(raw_features)
+
 
     # execute prediction and get probability scores
     preds = model.predict(features)
@@ -124,7 +128,8 @@ async def predict_many(data: List[IrisItem]):
     if not model:
         raise HTTPException(status_code=503, detail="Model not available.")
 
-    features = np.array([[d.sepal_length, d.sepal_width, d.petal_length, d.petal_width] for d in data])
+    raw_features = np.array([[d.sepal_length, d.sepal_width, d.petal_length, d.petal_width] for d in data])
+    features = scaler.transform(raw_features)
 
     preds = model.predict(features)
     probs = model.predict_proba(features)
