@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List
 import joblib
 import numpy as np
 import os, json
+from api.validator import anomaly_detect
 
 
 app = FastAPI(
@@ -26,12 +27,30 @@ class IrisItem(BaseModel):
     petal_length: float = Field(..., gt=0, lt=20)
     petal_width: float = Field(..., gt=0, lt=20)
 
+    @model_validator(mode='after')
+    def check_for_anomalies(self) -> 'IrisItem':
+        if anomaly_detect(
+                self.sepal_length,
+                self.sepal_width,
+                self.petal_length,
+                self.petal_width
+        ):
+            # if function anomaly_detect is True -> stop proces
+            raise ValueError("Input data is a statistical anomaly and does not match Iris characteristics.")
+
+        return self
+
+
+
 
 # model and evaluation metrics
 MODEL_PATH = "model/iris_softmax.joblib"
 REPORT_PATH = "model/classification_report.json"
 MATRIX_PATH = "model/confusion_matrix.png"
 FEATURES_PATH = "model/features.png"
+
+# threshold for probs -
+CONFIDENCE_THRESHOLD = 0.70
 
 # load the pre-trained model and define class names
 try:
@@ -68,7 +87,19 @@ async def predict(data: IrisItem):
     preds = model.predict(features)
     probs = model.predict_proba(features)
 
+    max_prob = np.max(probs)
+
+    if max_prob < CONFIDENCE_THRESHOLD:
+        return {
+            "status": "uncertain",
+            "species": None,
+            "confidence": f"{np.max(probs[0]) * 100:.2f}%",
+            "probabilities": {name: round(float(pr), 3) for name, pr in zip(iris_names, probs[0])},
+            "message": "Model confidence is too low. Manual verification required."
+        }
+
     return {
+        "status": "success",
         "species": iris_names[int(preds[0])],
         "confidence": f"{np.max(probs[0]) * 100:.2f}%",
         "probabilities": {name: round(float(pr), 3) for name, pr in zip(iris_names, probs[0])}
@@ -100,11 +131,22 @@ async def predict_many(data: List[IrisItem]):
 
     results = []
     for i in range(len(preds)):
-        results.append({
-            "species": iris_names[int(preds[i])],
-            "confidence": f"{np.max(probs[i]) * 100:.2f}%",
-            "probabilities": {name: round(float(pr), 3) for name, pr in zip(iris_names, probs[i])}
-        })
+        max_prob = np.max(probs[i])
+        if max_prob < CONFIDENCE_THRESHOLD:
+            results.append({
+                "status": "uncertain",
+                "species": None,
+                "confidence": f"{np.max(probs[i]) * 100:.2f}%",
+                "probabilities": {name: round(float(pr), 3) for name, pr in zip(iris_names, probs[i])},
+                "message": "Model confidence is too low. Manual verification required."
+            })
+        else:
+            results.append({
+                "status": "success",
+                "species": iris_names[int(preds[i])],
+                "confidence": f"{np.max(probs[i]) * 100:.2f}%",
+                "probabilities": {name: round(float(pr), 3) for name, pr in zip(iris_names, probs[0])}
+            })
     return results
 
 
