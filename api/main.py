@@ -22,6 +22,7 @@ async def root():
 
 class IrisItem(BaseModel):
     """Pydantic model for a single Iris flower observation features."""
+    
     sepal_length: float = Field(..., gt=0, lt=20)
     sepal_width: float = Field(..., gt=0, lt=20)
     petal_length: float = Field(..., gt=0, lt=20)
@@ -48,7 +49,7 @@ MODEL_PATH = "model/iris_softmax.joblib"
 SCALER_PATH = "model/scaler.joblib"
 REPORT_PATH = "model/classification_report.json"
 MATRIX_PATH = "model/confusion_matrix.png"
-FEATURES_PATH = "model/features.png"
+MODEL_DETAILS_PATH = "model/model_details.json"
 
 # threshold for probs -
 CONFIDENCE_THRESHOLD = 0.70
@@ -158,10 +159,19 @@ async def predict_many(data: List[IrisItem]):
 @app.get("/evaluation_metrics/report", tags=["Evaluation metrics"])
 async def get_report():
     """
-    Retrieves the model classification report in JSON format.
+    Retrieves the detailed classification performance metrics for the model in format JSON.
 
     Returns:
-        dict: The classification report with precision, recall, and f1-scores.
+        A dictionary containing performance metrics:
+
+        - species_name (dict): Individual metrics for 'setosa', 'versicolor', and 'virginica'.
+            - precision (float): Ability of the classifier not to label a negative sample as positive.
+            - recall (float): Ability of the classifier to find all the positive samples.
+            - f1-score (float): Harmonic mean of precision and recall.
+            - support (int): The number of actual occurrences of the class in the test set.
+        - accuracy (float): The overall fraction of correct predictions.
+        - macro avg (dict): Arithmetic mean of metrics across all classes.
+        - weighted avg (dict): Mean of metrics weighted by the number of samples in each class.
     """
 
     if os.path.exists(REPORT_PATH):
@@ -183,15 +193,24 @@ async def get_matrix():
     return {"error": "Confusion matrix image not found."}
 
 
-@app.get("/evaluation_metrics/features", tags=["Evaluation metrics"])
-async def get_features():
+@app.get("/evaluation_metrics/model_details", tags=["Evaluation metrics"])
+async def get_details():
     """
-    Retrieves the feature importance visualization as an image.
+    Retrieves technical data and internal parameters of the trained model in format JSON.
 
     Returns:
-        FileResponse: The feature importance PNG file.
+        A dictionary containing the model specification:
+
+            - model_type (str): The class name of the trained model.
+            - training_params (dict): Hyperparameters such as regularization (C),
+                solver, and multi_class settings.
+            - classes (list): List of target species names (0-Setosa, 1-Versicolor, 2-Virginica).
+            - coefficients (list): A 2D list of weights assigned to each feature
+                per class (from model.coef_).
+            - intercept (list): A list of bias values for each class (from model.intercept_).
     """
 
-    if os.path.exists(FEATURES_PATH):
-        return FileResponse(FEATURES_PATH)
-    return {"error": "Feature importance image not found."}
+    if os.path.exists(MODEL_DETAILS_PATH):
+        with open(MODEL_DETAILS_PATH, "r") as f:
+            return json.load(f)
+    return {"error": "Report file not found."}
