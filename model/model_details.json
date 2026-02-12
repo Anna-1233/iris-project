@@ -1,0 +1,49 @@
+{
+    "model_type": "<class 'sklearn.linear_model._logistic.LogisticRegression'>",
+    "training_params": {
+        "C": 1.0,
+        "class_weight": null,
+        "dual": false,
+        "fit_intercept": true,
+        "intercept_scaling": 1,
+        "l1_ratio": 0.0,
+        "max_iter": 200,
+        "n_jobs": null,
+        "penalty": "deprecated",
+        "random_state": null,
+        "solver": "lbfgs",
+        "tol": 0.0001,
+        "verbose": 0,
+        "warm_start": false
+    },
+    "classes": [
+        0,
+        1,
+        2
+    ],
+    "coefficients": [
+        [
+            -1.0031658680456674,
+            1.1448731791347797,
+            -1.811348201548856,
+            -1.6925102452850942
+        ],
+        [
+            0.5279904365027163,
+            -0.28319986855422785,
+            -0.3406066519989463,
+            -0.7201395909687704
+        ],
+        [
+            0.4751754315429504,
+            -0.8616733105805515,
+            2.1519548535478017,
+            2.412649836253865
+        ]
+    ],
+    "intercept": [
+        -0.13377224979017727,
+        1.9826464907666363,
+        -1.8488742409764591
+    ]
+}
