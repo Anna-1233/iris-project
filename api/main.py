@@ -22,7 +22,7 @@ async def root():
 
 class IrisItem(BaseModel):
     """Pydantic model for a single Iris flower observation features."""
-    
+
     sepal_length: float = Field(..., gt=0, lt=20)
     sepal_width: float = Field(..., gt=0, lt=20)
     petal_length: float = Field(..., gt=0, lt=20)
